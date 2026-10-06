@@ -1,0 +1,10 @@
+recall ceiling of the gate: 746/961 = 0.776
+
+End to end PR-AUC over all spillable intervals (random guess 0.052)
+  gate + model             per fold [0.743 0.79  0.683 0.675 0.704]  mean 0.719
+  gate + weight            per fold [0.59  0.654 0.496 0.472 0.61 ]  mean 0.564
+  weight only (no gate)    per fold [0.092 0.135 0.054 0.143 0.135]  mean 0.112
+
+The 215 spills that were not hard at first visit:
+  examined more than once: 215 of 215
+  free registers at first visit (median): 3 of 15

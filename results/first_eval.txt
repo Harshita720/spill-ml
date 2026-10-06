@@ -1,0 +1,23 @@
+spillable intervals=18628 spilled=961 programs=74
+hard at FIRST visit: 1598  spilled among them: 746 (46.7%)
+spills that were NOT hard at first visit: 215  <- the gate would miss these
+
+1) 5-fold CV, hard intervals (random-guess PR-AUC 0.467)
+   per-fold PR-AUC model   : [0.898 0.899 0.917 0.962 0.889]
+   per-fold PR-AUC baseline: [0.703 0.73  0.789 0.687 0.643]
+   model better in 5 of 5 folds
+    thr  flagged | Model P      R     F1 | Base P      R     F1
+    0.3     1033 |   0.691  0.957  0.803 |  0.608  0.842  0.706
+    0.5      777 |   0.825  0.859  0.842 |  0.646  0.673  0.659
+    0.7      574 |   0.894  0.688  0.777 |  0.674  0.519  0.586
+
+2) Leave-one-project-out, hard intervals
+   test        hard spilled | model PR  base PR | model F1@0.5  base F1 | rand
+   polybench    592     245 |    0.871    0.784 |        0.789    0.735 | 0.414
+   zlib         299     153 |    0.887    0.663 |        0.855    0.697 | 0.512
+   lua          707     348 |    0.781    0.703 |        0.715    0.671 | 0.492
+
+3) End to end over all intervals (gate + model) vs weight ranking
+   random-guess PR-AUC 0.052
+   per-fold PR-AUC end-to-end: [0.743 0.79  0.683 0.675 0.704]  mean 0.719
+   per-fold PR-AUC baseline  : [0.092 0.135 0.054 0.143 0.135]  mean 0.112

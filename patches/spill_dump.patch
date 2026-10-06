@@ -1,0 +1,78 @@
+diff --git a/llvm/lib/CodeGen/RegAllocGreedy.cpp b/llvm/lib/CodeGen/RegAllocGreedy.cpp
+index 5001b4fec..c9816b5b0 100644
+--- a/llvm/lib/CodeGen/RegAllocGreedy.cpp
++++ b/llvm/lib/CodeGen/RegAllocGreedy.cpp
+@@ -12,6 +12,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "RegAllocGreedy.h"
++#include <cstdlib>
+ #include "AllocationOrder.h"
+ #include "InterferenceCache.h"
+ #include "RegAllocBase.h"
+@@ -2405,6 +2406,46 @@ void RAGreedy::tryHintsRecoloring() {
+   }
+ }
+ 
++// --- spill-dataset instrumentation (research code) ---
++static bool spillDumpEnabled() {
++  static const bool Enabled = std::getenv("SPILL_DUMP") != nullptr;
++  return Enabled;
++}
++
++static void dumpSpillFeatures(const LiveInterval &VirtReg, MachineFunction &MF,
++                              MachineRegisterInfo &MRI,
++                              const TargetRegisterInfo &TRI,
++                              MachineLoopInfo &Loops, LiveRegMatrix &Matrix,
++                              AllocationOrder &Order) {
++  unsigned Uses = 0, Defs = 0, MaxDepth = 0, LoopRefs = 0;
++  for (const MachineOperand &MO : MRI.reg_nodbg_operands(VirtReg.reg())) {
++    if (MO.isDef())
++      ++Defs;
++    else
++      ++Uses;
++    unsigned Depth = Loops.getLoopDepth(MO.getParent()->getParent());
++    MaxDepth = std::max(MaxDepth, Depth);
++    if (Depth > 0)
++      ++LoopRefs;
++  }
++  unsigned FreeRegs = 0, TotalRegs = 0;
++  for (auto PhysReg : Order) {
++    ++TotalRegs;
++    if (Matrix.checkInterference(VirtReg, PhysReg) == LiveRegMatrix::IK_Free)
++      ++FreeRegs;
++  }
++  int CrossesRegMask = Matrix.checkRegMaskInterference(VirtReg) ? 1 : 0;
++  errs() << "SPILLDATA,F," << MF.getName() << ','
++         << Register::virtReg2Index(VirtReg.reg()) << ','
++         << TRI.getRegClassName(MRI.getRegClass(VirtReg.reg())) << ','
++         << VirtReg.size() << ',' << VirtReg.getSize() << ','
++         << VirtReg.weight() << ',' << Uses << ',' << Defs << ','
++         << MaxDepth << ',' << LoopRefs << ',' << CrossesRegMask << ','
++         << FreeRegs << ',' << TotalRegs << ','
++         << (VirtReg.isSpillable() ? 1 : 0) << '\n';
++}
++// --- end instrumentation ---
++
+ MCRegister RAGreedy::selectOrSplitImpl(const LiveInterval &VirtReg,
+                                        SmallVectorImpl<Register> &NewVRegs,
+                                        SmallVirtRegSet &FixedRegisters,
+@@ -2414,6 +2455,8 @@ MCRegister RAGreedy::selectOrSplitImpl(const LiveInterval &VirtReg,
+   // First try assigning a free register.
+   auto Order =
+       AllocationOrder::create(VirtReg.reg(), *VRM, RegClassInfo, Matrix);
++  if (spillDumpEnabled())
++    dumpSpillFeatures(VirtReg, *MF, *MRI, *TRI, *Loops, *Matrix, Order);
+   if (MCRegister PhysReg =
+           tryAssign(VirtReg, Order, NewVRegs, FixedRegisters)) {
+     // When NewVRegs is not empty, we may have made decisions such as evicting
+@@ -2498,6 +2541,9 @@ MCRegister RAGreedy::selectOrSplitImpl(const LiveInterval &VirtReg,
+     NamedRegionTimer T("spill", "Spiller", TimerGroupName,
+                        TimerGroupDescription, TimePassesIsEnabled);
+     LiveRangeEdit LRE(&VirtReg, NewVRegs, *MF, *LIS, VRM, this, &DeadRemats);
++  if (spillDumpEnabled())
++    errs() << "SPILLDATA,S," << MF->getName() << ','
++           << Register::virtReg2Index(VirtReg.reg()) << '\n';
+     spiller().spill(LRE);
+     ExtraInfo->setStage(NewVRegs.begin(), NewVRegs.end(), RS_Done);
+ 
