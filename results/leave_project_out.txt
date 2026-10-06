@@ -1,0 +1,7 @@
+test project  hard spilled | model PR  base PR |    model P/R/F1 @0.5 |  base P/R/F1 (same #flagged)
+polybench      867     356 |    0.895    0.723 |  0.813/0.820/0.817 |  0.635/0.640/0.638
+              (random-guess PR-AUC 0.411)
+zlib           398     186 |    0.883    0.612 |  0.773/0.898/0.831 |  0.597/0.694/0.642
+              (random-guess PR-AUC 0.467)
+lua            934     419 |    0.770    0.627 |  0.751/0.721/0.736 |  0.607/0.582/0.594
+              (random-guess PR-AUC 0.449)
