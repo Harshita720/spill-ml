@@ -1,0 +1,22 @@
+rows=3852 spilled=356 (9.2%) programs=30
+random-guess PR-AUC ~ 0.092
+
+model                               ROC-AUC         PR-AUC
+Baseline (weight only)       0.830 ± 0.017  0.302 ± 0.039
+RF  on A (old features)      0.957 ± 0.020  0.788 ± 0.074
+RF  on B (+ new features)    0.993 ± 0.002  0.943 ± 0.012
+GB  on B (+ new features)    0.991 ± 0.003  0.916 ± 0.023
+
+Per-fold PR-AUC change, B minus A: [0.231 0.048 0.14  0.128 0.227]  -> better in 5/5 folds, mean +0.155
+
+Permutation importance (drop in PR-AUC), top 10:
+total_regs      0.0119
+max_depth       0.0217
+loop_frac       0.0225
+log_size        0.0325
+defs            0.0507
+segments        0.0519
+crosses_mask    0.0667
+log_weight      0.1050
+uses            0.1129
+free_frac       0.5154
